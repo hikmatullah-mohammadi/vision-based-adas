@@ -10,11 +10,11 @@ class RoadSegmentation:
     '''
     def __init__(self, model_path, input_shape=(192, 256)):
         self.model = tf.keras.models.load_model(model_path, compile=False) # load the model
-        self.input_shape = input_shape 
+        self.input_shape = input_shape
         self.__image = None 
         self.__pred = None
         # color dictionary to assign different colors to detected objects
-        self.__color_dict = {
+        self.color_dict = {
             0: (0.7, 0.7, 0.7),     # road - gray
             1:  (0.9, 0.9, 0.2),     # sidewalk - light yellow
             2: (1.0, 0.4980392156862745, 0.054901960784313725),
@@ -47,15 +47,6 @@ class RoadSegmentation:
         self.__image = tf.image.resize(self.__image, self.input_shape, method=tf.image.ResizeMethod.LANCZOS3)
         self.__image = self.__image / 255.0  # Normalize the image
 
-        return self.__image
-        
-    # Segment the road image
-    def segment_road(self, image_path):
-        self.__preprocess_image(image_path)
-        self.__pred = self.model.predict(np.array([self.__image]))[0]
-        self.__pred = np.argmax(self.__pred, axis=-1)
-        return self.__image, self.__pred
-    
     # colorize the predicted mask
     def colorize_segments(self, pred_mask):
         # remove the extra dimension
@@ -63,14 +54,23 @@ class RoadSegmentation:
         # Generate the colored image using the color dictionary
         colored_image = np.zeros((*self.input_shape, 3))
 
-        for pixel_value, color in self.__color_dict.items():
+        for pixel_value, color in self.color_dict.items():
             colored_image[pred_mask == pixel_value] = color
 
         # Convert the image to 8-bit unsigned integer
         colored_image = (colored_image * 255).astype(np.uint8)
 
-        return colored_image
-        
+        return tf.clip_by_value(colored_image, 0, 255)
+    
+    
+    # Segment the road image
+    def segment_road(self, image_path):
+        self.__preprocess_image(image_path)
+        self.__pred = self.model.predict(np.array([self.__image]))[0]
+        self.__pred = np.argmax(self.__pred, axis=-1)
+        self.__image = tf.clip_by_value(self.__image, 0, 1)
+        return self.__image, self.__pred
+            
     # visualize the outputs
     def visualize_output(self, pred_mask):
         '''
