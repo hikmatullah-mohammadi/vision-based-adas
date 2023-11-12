@@ -3,7 +3,11 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
-from segment_road import RoadSegmentation
+
+try:
+    from segment_road import RoadSegmentation
+except:
+    from utils_scripts.segment_road import RoadSegmentation
 
 # define the class
 class ForwardCollisionWarning(RoadSegmentation):
