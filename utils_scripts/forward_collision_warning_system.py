@@ -43,28 +43,28 @@ class ForwardCollisionWarning(RoadSegmentation):
         colored_mask = (colored_mask * 255).astype(np.uint8)
         return colored_mask
     
-    def __patential_coll_util_image_with_mask_overlayed(self, x1, x2, y1, y2, colored_mask):
+    def __potential_coll_util_image_with_mask_overlayed(self, x1, x2, y1, y2, colored_mask):
         image_ = self.__image
         # Draw the rectangle on the image
         color = (0, 255, 0)  # Green
-        image_ = cv2.rectangle(image_.numpy(), (x1, y1), (x2, y2), (0, 1, 0), thickness=1)
+        image_ = cv2.rectangle(image_, (x1, y1), (x2, y2), (0, 1, 0), thickness=1)
         
         # overlay mask on the image
         image_ = self.overlay_mask_on_image(image_, colored_mask)
         
         return image_
 
-    def __patential_coll_util_image_only_roi_overlayed(self, x1, x2, y1, y2, colored_mask):
+    def __potential_coll_util_image_only_roi_overlayed(self, x1, x2, y1, y2, colored_mask):
         image_ = self.__image
         
         # Draw the rectangle on the image
         color = (0, 255, 0)  # Green
-        image_ = cv2.rectangle(image_.numpy(), (x1, y1), (x2, y2), (0, 1, 0), thickness=1)
+        image_ = cv2.rectangle(image_, (x1, y1), (x2, y2), (0, 1, 0), thickness=1)
 
         image_[y2:y1, x1:x2] = colored_mask[y2:y1, x1:x2]/255. * .7 + image_[y2:y1, x1:x2] * .3
         return image_
 
-    def detect_patential_collision(self, image, mask):
+    def detect_potential_collision(self, image, mask):
         self.__image = image
         image = self.__image
         
@@ -86,19 +86,19 @@ class ForwardCollisionWarning(RoadSegmentation):
         mask_colored = cv2.rectangle(mask_colored, (x1, y1), (x2, y2), color, thickness=1)    
 
         # get image with mask overlayed
-        image_with_mask_overlayed = self.__patential_coll_util_image_with_mask_overlayed(x1, x2, y1, y2, mask_colored)
+        image_with_mask_overlayed = self.__potential_coll_util_image_with_mask_overlayed(x1, x2, y1, y2, mask_colored)
 
         # get the image with only the roi overlayed
-        image_with_only_roi_overlayed = self.__patential_coll_util_image_only_roi_overlayed(x1, x2, y1, y2, mask_colored)
+        image_with_only_roi_overlayed = self.__potential_coll_util_image_only_roi_overlayed(x1, x2, y1, y2, mask_colored)
         
         # is there any objects in the roi
         flag = (True in np.logical_and(roi != 0, roi != 19))
-        return  flag, mask_colored/255., tf.clip_by_value(image_with_mask_overlayed, 0, 1) , tf.clip_by_value(image_with_only_roi_overlayed, 0, 1)
+        return  flag, mask_colored/255., tf.clip_by_value(image_with_mask_overlayed, 0, 1).numpy() , tf.clip_by_value(image_with_only_roi_overlayed, 0, 1).numpy()
     
     # visualize the outputs
     def visualize_output(self, mask, image_mask_overlayed, image_roi_overlayed, flag=None):
         '''
-            mask, image_mask_overlayed, and image_roi_overlayed are the outputs of the method detect_patential_collision(self)
+            mask, image_mask_overlayed, and image_roi_overlayed are the outputs of the method detect_potential_collision(self)
             The pixel values should be in range 0 - 1
         '''
         flag = 'PC Detected!' if flag == 1 else ('No PC Detected!' if flag == 0 else '---')
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     # segment the road image
     image, pred = fcw.segment_road(img_path)
     # 
-    flag, r_mask, r_image_mask, r_image_roi = fcw.detect_patential_collision(image, pred)
+    flag, r_mask, r_image_mask, r_image_roi = fcw.detect_potential_collision(image, pred)
     # visualize the results
     plt.figure(figsize=(20, 8))
     fcw.visualize_output(r_mask, r_image_mask, r_image_roi, flag)

@@ -68,7 +68,7 @@ class RoadSegmentation:
         self.__preprocess_image(image_path)
         self.__pred = self.model.predict(np.array([self.__image]))[0]
         self.__pred = np.argmax(self.__pred, axis=-1)
-        self.__image = tf.clip_by_value(self.__image, 0, 1)
+        self.__image = tf.clip_by_value(self.__image, 0, 1).numpy()
         return self.__image, self.__pred
             
     # visualize the outputs
